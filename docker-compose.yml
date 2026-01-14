@@ -1,0 +1,100 @@
+version: '3.8'
+
+# =============================================================================
+# HarmonizeIQ - Docker Compose Configuration
+# =============================================================================
+# Port Mapping (9000 series to avoid conflicts):
+#   - Frontend:    9000
+#   - Backend API: 9001
+#   - NLP Service: 9002
+#   - PostgreSQL:  9432
+# =============================================================================
+
+services:
+  # PostgreSQL Database with pgvector
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: harmonizeiq-db
+    environment:
+      POSTGRES_USER: harmonize_admin
+      POSTGRES_PASSWORD: harmonize_secret_2024
+      POSTGRES_DB: harmonizeiq
+    ports:
+      - "9432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U harmonize_admin -d harmonizeiq"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - harmonizeiq-network
+
+  # Node.js Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: harmonizeiq-backend
+    environment:
+      NODE_ENV: production
+      PORT: 9001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: harmonizeiq
+      DB_USER: harmonize_admin
+      DB_PASSWORD: harmonize_secret_2024
+      NLP_SERVICE_URL: http://nlp-service:8000
+      CORS_ORIGIN: http://localhost:9000
+    ports:
+      - "9001:9001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - harmonizeiq-network
+    restart: unless-stopped
+
+  # Python NLP/AI Service
+  nlp-service:
+    build:
+      context: ./nlp-service
+      dockerfile: Dockerfile
+    container_name: harmonizeiq-nlp
+    environment:
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "9002:8000"
+    volumes:
+      - model_cache:/root/.cache/huggingface
+    networks:
+      - harmonizeiq-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: harmonizeiq-frontend
+    ports:
+      - "9000:80"
+    depends_on:
+      - backend
+    networks:
+      - harmonizeiq-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  model_cache:
+
+networks:
+  harmonizeiq-network:
+    driver: bridge
