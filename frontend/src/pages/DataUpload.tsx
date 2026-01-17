@@ -72,9 +72,9 @@ export default function DataUpload() {
         const status = await fetchProcessingStatus();
         setProcessingStatus({
           isProcessing: false,
-          processed: status.processed || 0,
-          remaining: status.pending || 0,
-          progress: parseFloat(status.progress) || 0,
+          processed: Number(status.processed) || 0,
+          remaining: Number(status.pending) || 0,
+          progress: Number(status.progress) || 0,
         });
       } catch (error) {
         console.log('Could not fetch processing status');
@@ -161,18 +161,18 @@ export default function DataUpload() {
           const status = await fetchProcessingStatus();
           setProcessingStatus({
             isProcessing: status.isProcessing || false,
-            processed: status.processed || 0,
-            remaining: status.remaining || 0,
-            progress: status.progress || 100,
+            processed: Number(status.processed) || 0,
+            remaining: Number(status.pending) || 0,
+            progress: Number(status.progress) || 0,
           });
           if (!status.isProcessing) break;
         } catch {
           // Fallback: simulate progress
           setProcessingStatus(prev => ({
             ...prev,
-            processed: prev.processed + Math.floor(Math.random() * 30),
-            remaining: Math.max(0, prev.remaining - Math.floor(Math.random() * 30)),
-            progress: Math.min(100, prev.progress + Math.random() * 5),
+            processed: Number(prev.processed) + Math.floor(Math.random() * 30),
+            remaining: Math.max(0, Number(prev.remaining) - Math.floor(Math.random() * 30)),
+            progress: Math.min(100, Number(prev.progress) + Math.random() * 5),
           }));
         }
       }
@@ -235,7 +235,7 @@ export default function DataUpload() {
           </div>
           <div className="p-4 rounded-xl bg-surface-800/50 border border-surface-700/50">
             <p className="text-sm text-surface-400">Progress</p>
-            <p className="text-2xl font-bold text-brand-400 mt-1">{processingStatus.progress.toFixed(1)}%</p>
+            <p className="text-2xl font-bold text-brand-400 mt-1">{Number(processingStatus.progress || 0).toFixed(1)}%</p>
           </div>
         </div>
 
