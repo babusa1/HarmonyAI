@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Upload,
@@ -61,9 +61,27 @@ export default function DataUpload() {
   const [processingStatus, setProcessingStatus] = useState({
     isProcessing: false,
     processed: 0,
-    remaining: 234,
-    progress: 87.5,
+    remaining: 0,
+    progress: 0,
   });
+
+  // Fetch initial processing status on mount
+  useEffect(() => {
+    const loadStatus = async () => {
+      try {
+        const status = await fetchProcessingStatus();
+        setProcessingStatus({
+          isProcessing: false,
+          processed: status.processed || 0,
+          remaining: status.pending || 0,
+          progress: parseFloat(status.progress) || 0,
+        });
+      } catch (error) {
+        console.log('Could not fetch processing status');
+      }
+    };
+    loadStatus();
+  }, []);
 
   const handleDrop = useCallback((e: React.DragEvent, uploadId: string) => {
     e.preventDefault();
