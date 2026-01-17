@@ -1,6 +1,10 @@
-# HarmonizeIQ NLP Service Dockerfile
+# HarmonizeIQ NLP Service - Using PyTorch Base Image
+# This avoids the 2GB PyTorch download by using an image that already has it
 
-FROM python:3.11-slim
+FROM pytorch/pytorch:2.1.2-cuda11.8-cudnn8-runtime
+
+# Switch to CPU-only (smaller footprint, no CUDA needed for inference)
+ENV CUDA_VISIBLE_DEVICES=""
 
 WORKDIR /app
 
@@ -10,13 +14,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for caching
-COPY requirements.txt .
+# Copy requirements (without torch since it's already in base image)
+COPY requirements-no-torch.txt .
 
-# Install Python dependencies with increased timeout and retries
-RUN pip install --no-cache-dir --default-timeout=1000 --retries=5 -r requirements.txt
+# Install remaining Python dependencies
+RUN pip install --no-cache-dir --default-timeout=300 -r requirements-no-torch.txt
 
-# Pre-download the model to include in image
+# Pre-download the sentence transformer model to include in image
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
 # Copy application code

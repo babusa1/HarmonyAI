@@ -214,7 +214,7 @@ export class AnalyticsService {
       const totalRevenue = parseFloat(row.our_revenue) + parseFloat(row.competitor_revenue);
       const ourShare = totalRevenue > 0 
         ? (parseFloat(row.our_revenue) / totalRevenue * 100).toFixed(1)
-        : 0;
+        : '0';
 
       // Calculate month-over-month growth
       const prevMonthRow = arr.find(r => 

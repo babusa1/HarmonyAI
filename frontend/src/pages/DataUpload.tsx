@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Upload,
@@ -14,6 +14,7 @@ import {
   Download,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { uploadFile, triggerProcessing as triggerProcessingAPI, fetchProcessingStatus } from '../lib/api';
 
 interface UploadState {
   file: File | null;
@@ -94,37 +95,71 @@ export default function DataUpload() {
       [uploadId]: { ...prev[uploadId], status: 'uploading', message: 'Uploading...' }
     }));
 
-    // Simulate upload
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Call actual API
+      const result = await uploadFile(
+        uploadId, 
+        state.file, 
+        uploadId === 'retailer' ? selectedSource : undefined
+      );
 
-    // Simulate success
-    setUploadStates(prev => ({
-      ...prev,
-      [uploadId]: {
-        ...prev[uploadId],
-        status: 'success',
-        message: 'Upload successful!',
-        result: {
-          recordsProcessed: Math.floor(Math.random() * 500) + 100,
-          recordsCreated: Math.floor(Math.random() * 400) + 50,
-          recordsUpdated: Math.floor(Math.random() * 100),
+      setUploadStates(prev => ({
+        ...prev,
+        [uploadId]: {
+          ...prev[uploadId],
+          status: 'success',
+          message: 'Upload successful!',
+          result: {
+            recordsProcessed: result.recordsProcessed || result.count || 0,
+            recordsCreated: result.recordsCreated || result.count || 0,
+            recordsUpdated: result.recordsUpdated || 0,
+          }
         }
-      }
-    }));
+      }));
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      setUploadStates(prev => ({
+        ...prev,
+        [uploadId]: {
+          ...prev[uploadId],
+          status: 'error',
+          message: error.response?.data?.error || error.message || 'Upload failed. Please check file format.',
+        }
+      }));
+    }
   };
 
-  const triggerProcessing = async () => {
+  const handleTriggerProcessing = async () => {
     setProcessingStatus(prev => ({ ...prev, isProcessing: true }));
     
-    // Simulate processing
-    for (let i = 0; i < 10; i++) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setProcessingStatus(prev => ({
-        ...prev,
-        processed: prev.processed + Math.floor(Math.random() * 30),
-        remaining: Math.max(0, prev.remaining - Math.floor(Math.random() * 30)),
-        progress: Math.min(100, prev.progress + Math.random() * 5),
-      }));
+    try {
+      // Call actual processing API
+      await triggerProcessingAPI(50);
+      
+      // Poll for status updates
+      for (let i = 0; i < 20; i++) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+          const status = await fetchProcessingStatus();
+          setProcessingStatus({
+            isProcessing: status.isProcessing || false,
+            processed: status.processed || 0,
+            remaining: status.remaining || 0,
+            progress: status.progress || 100,
+          });
+          if (!status.isProcessing) break;
+        } catch {
+          // Fallback: simulate progress
+          setProcessingStatus(prev => ({
+            ...prev,
+            processed: prev.processed + Math.floor(Math.random() * 30),
+            remaining: Math.max(0, prev.remaining - Math.floor(Math.random() * 30)),
+            progress: Math.min(100, prev.progress + Math.random() * 5),
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Processing error:', error);
     }
 
     setProcessingStatus(prev => ({ ...prev, isProcessing: false }));
@@ -158,7 +193,7 @@ export default function DataUpload() {
             </p>
           </div>
           <button
-            onClick={triggerProcessing}
+            onClick={handleTriggerProcessing}
             disabled={processingStatus.isProcessing}
             className="btn-primary flex items-center gap-2"
           >
@@ -258,11 +293,11 @@ export default function DataUpload() {
                 )}
 
                 {/* Drop Zone */}
-                <div
+                <label
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => handleDrop(e, type.id)}
                   className={cn(
-                    "border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200",
+                    "relative block border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 cursor-pointer",
                     state?.file 
                       ? "border-accent-mint/50 bg-accent-mint/5" 
                       : "border-surface-700 hover:border-surface-500 hover:bg-surface-800/30"
@@ -290,10 +325,9 @@ export default function DataUpload() {
                     type="file"
                     accept=".csv,.xlsx"
                     onChange={(e) => handleFileSelect(e, type.id)}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    style={{ position: 'absolute' }}
+                    className="sr-only"
                   />
-                </div>
+                </label>
 
                 {/* Status */}
                 {state?.status === 'success' && state.result && (

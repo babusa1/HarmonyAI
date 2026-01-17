@@ -1,15 +1,13 @@
 # =============================================================================
-# HarmonizeIQ - Docker Compose Configuration
+# HarmonizeIQ - DEVELOPMENT Docker Compose
 # =============================================================================
-# Port Mapping (9000 series to avoid conflicts):
-#   - Frontend:    9000
-#   - Backend API: 9001
-#   - NLP Service: 9002
-#   - PostgreSQL:  9432
+# Use this for development - code changes reflect immediately WITHOUT rebuilding!
+#
+# Start with: docker-compose -f docker-compose.dev.yml up -d
 # =============================================================================
 
 services:
-  # PostgreSQL Database with pgvector
+  # PostgreSQL Database with pgvector (same as production)
   postgres:
     image: pgvector/pgvector:pg16
     container_name: harmonizeiq-db
@@ -30,14 +28,14 @@ services:
     networks:
       - harmonizeiq-network
 
-  # Node.js Backend API
+  # Node.js Backend API - DEV MODE (volume mounted, auto-restart on changes)
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: harmonizeiq-backend
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 9001
       DB_HOST: postgres
       DB_PORT: 5432
@@ -45,9 +43,12 @@ services:
       DB_USER: harmonize_admin
       DB_PASSWORD: harmonize_secret_2024
       NLP_SERVICE_URL: http://nlp-service:8000
-      CORS_ORIGIN: http://localhost:9000
+      CORS_ORIGIN: "*"
     ports:
       - "9001:9001"
+    volumes:
+      # Mount source code - changes reflect immediately!
+      - ./backend/src:/app/src
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,7 +56,7 @@ services:
       - harmonizeiq-network
     restart: unless-stopped
 
-  # Python NLP/AI Service (Using PyTorch Base Image - No 2GB Download!)
+  # NLP Service (same as production - no hot reload needed)
   nlp-service:
     build:
       context: ./nlp-service
@@ -77,14 +78,17 @@ services:
         limits:
           memory: 4G
 
-  # React Frontend
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+  # Frontend - DEV MODE (run locally for hot reload, or use nginx)
+  # For best dev experience: run `npm run dev` locally in frontend/
+  frontend-nginx:
+    image: nginx:alpine
     container_name: harmonizeiq-frontend
     ports:
       - "9000:80"
+    volumes:
+      # Serve built files (run npm run build locally when needed)
+      - ./frontend/dist:/usr/share/nginx/html
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - backend
     networks:
