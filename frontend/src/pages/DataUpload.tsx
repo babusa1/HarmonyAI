@@ -311,11 +311,12 @@ export default function DataUpload() {
                 )}
 
                 {/* Drop Zone */}
-                <label
+                <div
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => handleDrop(e, type.id)}
+                  onClick={() => document.getElementById(`file-input-${type.id}`)?.click()}
                   className={cn(
-                    "relative block border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 cursor-pointer",
+                    "relative border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 cursor-pointer",
                     state?.file 
                       ? "border-accent-mint/50 bg-accent-mint/5" 
                       : "border-surface-700 hover:border-surface-500 hover:bg-surface-800/30"
@@ -340,12 +341,13 @@ export default function DataUpload() {
                   )}
                   
                   <input
+                    id={`file-input-${type.id}`}
                     type="file"
                     accept=".csv,.xlsx"
                     onChange={(e) => handleFileSelect(e, type.id)}
-                    className="sr-only"
+                    className="hidden"
                   />
-                </label>
+                </div>
 
                 {/* Status */}
                 {state?.status === 'success' && state.result && (
