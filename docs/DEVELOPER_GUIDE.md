@@ -294,6 +294,13 @@ Currently using raw SQL files. For production, consider:
 
 ## 6. API Reference
 
+### 📖 Interactive API Documentation
+
+| Service | Swagger URL |
+|---------|-------------|
+| Backend API | http://localhost:9001/docs |
+| NLP Service | http://localhost:9002/docs |
+
 ### 6.1 Catalog Endpoints
 
 | Method | Endpoint | Description |
@@ -305,7 +312,18 @@ Currently using raw SQL files. For production, consider:
 | POST | `/api/catalog` | Create product |
 | PUT | `/api/catalog/:id` | Update product |
 
-### 6.2 Mapping Endpoints
+### 6.2 Upload Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/upload/catalog` | Upload master catalog CSV |
+| POST | `/api/upload/retailer` | Upload retailer data CSV |
+| POST | `/api/upload/sales` | Upload sales data CSV |
+| POST | `/api/upload/process` | Trigger AI processing |
+| GET | `/api/upload/status` | Get processing status |
+| GET | `/api/upload/templates` | Get CSV templates |
+
+### 6.3 Mapping Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -316,7 +334,18 @@ Currently using raw SQL files. For production, consider:
 | POST | `/api/mapping/:id/reject` | Reject mapping |
 | POST | `/api/mapping/manual` | Create manual mapping |
 
-### 6.3 Analytics Endpoints
+### 6.4 Export Endpoints (NEW)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/export/mappings` | Export mappings (CSV/JSON) |
+| GET | `/api/export/catalog` | Export catalog with counts |
+| GET | `/api/export/retailer/:code` | Export by retailer |
+| GET | `/api/export/analytics/summary` | Overall statistics |
+| GET | `/api/export/analytics/cross-retailer` | Multi-retailer comparison |
+| GET | `/api/export/analytics/price-comparison` | Price analysis |
+
+### 6.5 Analytics Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|

@@ -169,7 +169,13 @@ def calculate_match_score(master, raw):
 
 ## 5. API Architecture
 
-### 5.1 RESTful Endpoints
+### 5.1 API Documentation
+
+Interactive Swagger documentation available at:
+- **Backend API**: http://localhost:9001/docs
+- **NLP Service**: http://localhost:9002/docs
+
+### 5.2 RESTful Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -182,6 +188,12 @@ def calculate_match_score(master, raw):
 | GET | `/api/analytics/benchmark` | Competitor comparison |
 | POST | `/api/upload/catalog` | Upload product catalog |
 | POST | `/api/upload/retailer` | Upload retailer data |
+| POST | `/api/upload/process` | Trigger AI processing |
+| GET | `/api/export/mappings` | Export mappings (CSV/JSON) |
+| GET | `/api/export/catalog` | Export catalog |
+| GET | `/api/export/analytics/summary` | Summary statistics |
+| GET | `/api/export/analytics/cross-retailer` | Cross-retailer comparison |
+| GET | `/api/export/analytics/price-comparison` | Price analysis |
 
 ### 5.2 Request Flow
 

@@ -167,9 +167,10 @@ harmonizeiq/
 | Document | Description |
 |----------|-------------|
 | [Architecture](docs/ARCHITECTURE.md) | System design & data flow |
-| [AWS Deployment](docs/AWS_DEPLOYMENT.md) | Production deployment guide |
 | [Developer Guide](docs/DEVELOPER_GUIDE.md) | Setup & contribution guide |
 | [PRD](docs/PRD.md) | Product Requirements Document |
+| [Deployment Guide](docs/DEPLOYMENT_GUIDE.md) | AWS + Vercel step-by-step |
+| [AWS Deployment](docs/AWS_DEPLOYMENT.md) | AWS-specific deployment |
 | [Testing Documentation](docs/TESTING_DOCUMENTATION.md) | API tests & verification |
 | [Demo Guide](demo-data/DEMO_GUIDE.md) | Step-by-step demo walkthrough |
 

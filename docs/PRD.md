@@ -298,15 +298,39 @@ Where:
 
 ## 8. MVP Scope
 
-### 8.1 In Scope (MVP)
+### 8.1 Completed Features ✅
 
-- ✅ CSV data upload
+**Phase 1 - Foundation**
+- ✅ CSV data upload (catalog, retailer, sales)
 - ✅ AI matching with confidence scores
 - ✅ HITL review dashboard
 - ✅ Product catalog management
-- ✅ Basic analytics (sales, benchmark)
 - ✅ Docker deployment
 - ✅ AWS deployment scripts
+
+**Phase 2 - Intelligence**
+- ✅ Brand dictionary (50+ FMCG brands)
+- ✅ Abbreviation expansion
+- ✅ Text normalization
+- ✅ Enhanced matching algorithm
+
+**Phase 3 - Learning**
+- ✅ HITL decision storage
+- ✅ Abbreviation learning from approvals
+- ✅ Retailer-specific statistics
+- ✅ Feedback analytics
+
+**Phase 4 - Export & Scale**
+- ✅ Export to CSV/JSON
+- ✅ Multi-retailer support
+- ✅ Filtered exports by status/retailer
+- ✅ Bulk processing
+
+**Phase 5 - Analytics**
+- ✅ Summary statistics
+- ✅ Cross-retailer comparison
+- ✅ Price comparison analytics
+- ✅ Swagger API documentation
 
 ### 8.2 Out of Scope (Future)
 
