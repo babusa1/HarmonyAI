@@ -75,7 +75,25 @@ export class CatalogService {
         mc.created_at,
         b.name as brand_name,
         b.manufacturer,
-        c.name as category_name
+        c.name as category_name,
+        COALESCE((
+          SELECT COUNT(*) 
+          FROM equivalence_map em 
+          WHERE em.master_id = mc.id 
+          AND em.status IN ('auto_confirmed', 'verified', 'manual')
+        ), 0) as mapped_count,
+        COALESCE((
+          SELECT COUNT(*) 
+          FROM equivalence_map em 
+          WHERE em.master_id = mc.id 
+          AND em.status = 'auto_confirmed'
+        ), 0) as auto_confirmed_count,
+        COALESCE((
+          SELECT COUNT(*) 
+          FROM equivalence_map em 
+          WHERE em.master_id = mc.id 
+          AND em.status = 'pending'
+        ), 0) as pending_count
       FROM manufacturer_catalog mc
       LEFT JOIN brands b ON mc.brand_id = b.id
       LEFT JOIN categories c ON mc.category_id = c.id
