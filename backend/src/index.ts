@@ -9,10 +9,12 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
 import { router as apiRouter } from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 import { initializeDatabase } from './database/connection.js';
+import { swaggerSpec } from './config/swagger.js';
 
 // Load environment variables
 dotenv.config();
@@ -21,9 +23,11 @@ const app = express();
 const PORT = process.env.PORT || 9001;
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false // Allow Swagger UI to load
+}));
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: process.env.CORS_ORIGIN || 'http://localhost:9000',
   credentials: true,
 }));
 
@@ -44,6 +48,18 @@ app.get('/health', (req, res) => {
     service: 'harmonizeiq-backend',
     timestamp: new Date().toISOString()
   });
+});
+
+// Swagger API Documentation
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'HarmonizeIQ API Docs'
+}));
+
+// Swagger JSON endpoint
+app.get('/docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 // API Routes
