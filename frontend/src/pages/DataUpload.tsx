@@ -114,11 +114,12 @@ export default function DataUpload() {
     }));
 
     try {
-      // Call actual API
+      // Call actual API - both retailer and sales need sourceSystem
+      const needsSourceSystem = uploadId === 'retailer' || uploadId === 'sales';
       const result = await uploadFile(
         uploadId, 
         state.file, 
-        uploadId === 'retailer' ? selectedSource : undefined
+        needsSourceSystem ? selectedSource : undefined
       );
 
       setUploadStates(prev => ({
@@ -293,9 +294,9 @@ export default function DataUpload() {
 
               {/* Upload Area */}
               <div className="p-4">
-                {type.id === 'retailer' && (
+                {(type.id === 'retailer' || type.id === 'sales') && (
                   <div className="mb-4">
-                    <label className="block text-sm text-surface-400 mb-2">Source System</label>
+                    <label className="block text-sm text-surface-400 mb-2">Source System (Retailer)</label>
                     <select
                       value={selectedSource}
                       onChange={(e) => setSelectedSource(e.target.value)}
