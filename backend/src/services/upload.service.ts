@@ -27,6 +27,7 @@ export class UploadService {
     let recordsProcessed = 0;
     let recordsCreated = 0;
     let recordsUpdated = 0;
+    const insertedIds: { id: string; name: string }[] = [];
 
     try {
       const content = file.buffer.toString('utf-8');
@@ -106,16 +107,18 @@ export class UploadService {
                 existing.rows[0].id
               ]
             );
+            insertedIds.push({ id: existing.rows[0].id, name: record.canonical_name });
             recordsUpdated++;
           } else {
             // Create new
+            const newId = uuid();
             await pool.query(
               `INSERT INTO manufacturer_catalog (
                  id, gtin, canonical_name, brand_id, category_id,
                  size_value, size_unit, size_normalized_ml, attributes
                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
               [
-                uuid(),
+                newId,
                 record.gtin || null,
                 record.canonical_name,
                 brandId,
@@ -126,10 +129,30 @@ export class UploadService {
                 JSON.stringify(record.attributes || {})
               ]
             );
+            insertedIds.push({ id: newId, name: record.canonical_name });
             recordsCreated++;
           }
         } catch (err: any) {
           errors.push(`Row ${recordsProcessed}: ${err.message}`);
+        }
+      }
+
+      // Generate embeddings for all inserted/updated records
+      if (insertedIds.length > 0) {
+        try {
+          const names = insertedIds.map(r => r.name);
+          const embeddings = await this.nlpClient.generateEmbeddingsBatch(names);
+          
+          for (let i = 0; i < insertedIds.length; i++) {
+            await pool.query(
+              `UPDATE manufacturer_catalog 
+               SET description_embedding = $1 
+               WHERE id = $2`,
+              [`[${embeddings[i].join(',')}]`, insertedIds[i].id]
+            );
+          }
+        } catch (embeddingErr: any) {
+          errors.push(`Embedding generation failed: ${embeddingErr.message}`);
         }
       }
     } catch (err: any) {
