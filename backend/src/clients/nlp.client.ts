@@ -116,6 +116,183 @@ export class NLPClient {
   }
 
   /**
+   * Normalize text using abbreviation expansion
+   */
+  async normalize(text: string, retailer?: string): Promise<{
+    original: string;
+    normalized: string;
+    brand?: string;
+    brandConfidence: number;
+    categoryHint?: string;
+    expansions: Array<{ from: string; to: string }>;
+  }> {
+    try {
+      const response = await this.client.post('/normalize', { text, retailer });
+      return {
+        original: response.data.original,
+        normalized: response.data.normalized,
+        brand: response.data.brand,
+        brandConfidence: response.data.brand_confidence,
+        categoryHint: response.data.category_hint,
+        expansions: response.data.expansions
+      };
+    } catch (error) {
+      console.error('Failed to normalize:', error);
+      return {
+        original: text,
+        normalized: text,
+        brandConfidence: 0,
+        expansions: []
+      };
+    }
+  }
+
+  /**
+   * Normalize multiple texts in batch
+   */
+  async normalizeBatch(texts: string[], retailer?: string): Promise<{
+    count: number;
+    results: Array<{
+      original: string;
+      normalized: string;
+      brand?: string;
+      brandConfidence: number;
+      categoryHint?: string;
+    }>;
+  }> {
+    try {
+      const response = await this.client.post('/normalize/batch', { texts, retailer });
+      return {
+        count: response.data.count,
+        results: response.data.results.map((r: any) => ({
+          original: r.original,
+          normalized: r.normalized,
+          brand: r.brand,
+          brandConfidence: r.brand_confidence,
+          categoryHint: r.category_hint
+        }))
+      };
+    } catch (error) {
+      console.error('Failed to normalize batch:', error);
+      return {
+        count: texts.length,
+        results: texts.map(t => ({
+          original: t,
+          normalized: t,
+          brandConfidence: 0
+        }))
+      };
+    }
+  }
+
+  /**
+   * Enhanced matching with normalization
+   */
+  async enhancedMatch(masterName: string, rawDescription: string, options?: {
+    masterBrand?: string;
+    masterCategory?: string;
+    masterSizeValue?: number;
+    masterSizeUnit?: string;
+    retailer?: string;
+  }): Promise<{
+    normalizedDescription: string;
+    semanticScore: number;
+    attributeScore: number;
+    normalizationBonus: number;
+    finalConfidence: number;
+    recommendedStatus: string;
+    matchingDetails: any;
+    normalizationDetails: any;
+  }> {
+    try {
+      const response = await this.client.post('/match/enhanced', {
+        master_name: masterName,
+        master_brand: options?.masterBrand,
+        master_category: options?.masterCategory,
+        master_size_value: options?.masterSizeValue,
+        master_size_unit: options?.masterSizeUnit,
+        raw_description: rawDescription,
+        retailer: options?.retailer,
+        normalize: true
+      });
+      return {
+        normalizedDescription: response.data.normalized_description,
+        semanticScore: response.data.semantic_score,
+        attributeScore: response.data.attribute_score,
+        normalizationBonus: response.data.normalization_bonus,
+        finalConfidence: response.data.final_confidence,
+        recommendedStatus: response.data.recommended_status,
+        matchingDetails: response.data.matching_details,
+        normalizationDetails: response.data.normalization_details
+      };
+    } catch (error) {
+      console.error('Failed enhanced match:', error);
+      throw new Error('Enhanced match failed');
+    }
+  }
+
+  /**
+   * Record HITL decision for learning
+   */
+  async recordDecision(decision: {
+    mappingId: string;
+    rawDescription: string;
+    masterProduct: string;
+    decision: 'approved' | 'rejected';
+    originalConfidence: number;
+    retailer: string;
+    corrections?: any;
+  }): Promise<void> {
+    try {
+      await this.client.post('/learn/decision', {
+        mapping_id: decision.mappingId,
+        raw_description: decision.rawDescription,
+        master_product: decision.masterProduct,
+        decision: decision.decision,
+        original_confidence: decision.originalConfidence,
+        retailer: decision.retailer,
+        corrections: decision.corrections
+      });
+    } catch (error) {
+      console.error('Failed to record decision:', error);
+      // Don't throw - learning is non-critical
+    }
+  }
+
+  /**
+   * Get learning stats
+   */
+  async getLearningStats(retailer?: string): Promise<any> {
+    try {
+      const url = retailer ? `/learn/stats?retailer=${retailer}` : '/learn/stats';
+      const response = await this.client.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get learning stats:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get learned abbreviation patterns
+   */
+  async getLearnedPatterns(minOccurrences: number = 1): Promise<Array<{
+    abbreviation: string;
+    expansion: string;
+    occurrences: number;
+    confidence: number;
+    retailers: string[];
+  }>> {
+    try {
+      const response = await this.client.get(`/learn/patterns?min_occurrences=${minOccurrences}`);
+      return response.data.patterns;
+    } catch (error) {
+      console.error('Failed to get patterns:', error);
+      return [];
+    }
+  }
+
+  /**
    * Health check for NLP service
    */
   async healthCheck(): Promise<boolean> {

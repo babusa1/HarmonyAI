@@ -1,9 +1,11 @@
 /**
  * Mapping Service - Manages Equivalence Mappings & HITL Workflow
+ * Integrates with NLP Learning Service for continuous improvement
  */
 
 import { pool } from '../database/connection.js';
 import { v4 as uuid } from 'uuid';
+import { NLPClient } from '../clients/nlp.client.js';
 
 interface MappingFilters {
   page: number;
@@ -22,6 +24,12 @@ interface ManualMappingInput {
 }
 
 export class MappingService {
+  private nlpClient: NLPClient;
+
+  constructor() {
+    this.nlpClient = new NLPClient();
+  }
+
   async getMappings(filters: MappingFilters) {
     const { page, limit, status, minConfidence, maxConfidence } = filters;
     const offset = (page - 1) * limit;
@@ -225,6 +233,9 @@ export class MappingService {
   }
 
   async approveMapping(id: string, notes?: string) {
+    // Get full mapping details first
+    const mappingDetails = await this.getMappingById(id);
+    
     const query = `
       UPDATE equivalence_map
       SET 
@@ -241,10 +252,30 @@ export class MappingService {
     // Log to audit trail
     await this.logAudit('equivalence_map', id, 'review', { action: 'approved', notes });
 
+    // Record decision to NLP learning service for pattern learning
+    if (mappingDetails) {
+      try {
+        await this.nlpClient.recordDecision({
+          mappingId: id,
+          rawDescription: mappingDetails.raw_description,
+          masterProduct: mappingDetails.master_product,
+          decision: 'approved',
+          originalConfidence: parseFloat(mappingDetails.final_confidence),
+          retailer: mappingDetails.retailer_code
+        });
+      } catch (err) {
+        console.warn('Failed to record decision to NLP service:', err);
+        // Non-critical - don't fail the approval
+      }
+    }
+
     return result.rows[0];
   }
 
   async rejectMapping(id: string, notes?: string, alternativeMasterId?: string) {
+    // Get full mapping details first
+    const mappingDetails = await this.getMappingById(id);
+    
     const query = `
       UPDATE equivalence_map
       SET 
@@ -260,11 +291,10 @@ export class MappingService {
 
     // If an alternative master was provided, create a new manual mapping
     if (alternativeMasterId) {
-      const mapping = await this.getMappingById(id);
-      if (mapping) {
+      if (mappingDetails) {
         await this.createManualMapping({
           masterId: alternativeMasterId,
-          rawId: mapping.raw_id,
+          rawId: mappingDetails.raw_id,
           notes: `Corrected from rejected mapping. Original: ${notes || 'N/A'}`
         });
       }
@@ -272,6 +302,24 @@ export class MappingService {
 
     // Log to audit trail
     await this.logAudit('equivalence_map', id, 'review', { action: 'rejected', notes, alternativeMasterId });
+
+    // Record decision to NLP learning service
+    if (mappingDetails) {
+      try {
+        await this.nlpClient.recordDecision({
+          mappingId: id,
+          rawDescription: mappingDetails.raw_description,
+          masterProduct: mappingDetails.master_product,
+          decision: 'rejected',
+          originalConfidence: parseFloat(mappingDetails.final_confidence),
+          retailer: mappingDetails.retailer_code,
+          corrections: alternativeMasterId ? { correctedMasterId: alternativeMasterId } : undefined
+        });
+      } catch (err) {
+        console.warn('Failed to record rejection to NLP service:', err);
+        // Non-critical - don't fail the rejection
+      }
+    }
 
     return result.rows[0];
   }
@@ -344,5 +392,19 @@ export class MappingService {
        VALUES ($1, $2, $3, $4)`,
       [tableName, recordId, action, JSON.stringify(details)]
     );
+  }
+
+  /**
+   * Get learning statistics from NLP service
+   */
+  async getLearningStats(retailer?: string) {
+    return await this.nlpClient.getLearningStats(retailer);
+  }
+
+  /**
+   * Get learned abbreviation patterns
+   */
+  async getLearnedPatterns(minOccurrences: number = 1) {
+    return await this.nlpClient.getLearnedPatterns(minOccurrences);
   }
 }

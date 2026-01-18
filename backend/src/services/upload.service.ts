@@ -365,10 +365,12 @@ export class UploadService {
   }
 
   async triggerProcessing(batchSize: number = 100) {
-    // Get pending records
+    // Get pending records with source system info (for retailer identification)
     const pendingResult = await pool.query(
-      `SELECT id, raw_description FROM retailer_data_raw 
-       WHERE processing_status = 'pending' 
+      `SELECT r.id, r.raw_description, s.code as retailer
+       FROM retailer_data_raw r
+       JOIN source_systems s ON r.source_system_id = s.id
+       WHERE r.processing_status = 'pending' 
        LIMIT $1`,
       [batchSize]
     );
@@ -376,24 +378,41 @@ export class UploadService {
     const records = pendingResult.rows;
     let processed = 0;
     let failed = 0;
+    let autoConfirmed = 0;
+    let pendingReview = 0;
 
     // Process in batches
     const descriptions = records.map(r => r.raw_description);
     
     try {
-      // Generate embeddings in batch
-      const embeddings = await this.nlpClient.generateEmbeddingsBatch(descriptions);
+      // Step 1: Normalize descriptions using NLP service
+      let normalizedDescriptions: string[] = [];
+      try {
+        const normalizeResponse = await this.nlpClient.normalizeBatch(descriptions);
+        normalizedDescriptions = normalizeResponse.results.map((r: any) => r.normalized);
+        console.log(`Normalized ${normalizedDescriptions.length} descriptions`);
+      } catch (normErr) {
+        console.warn('Normalization failed, using original descriptions:', normErr);
+        normalizedDescriptions = descriptions;
+      }
+
+      // Step 2: Generate embeddings for normalized text
+      const embeddings = await this.nlpClient.generateEmbeddingsBatch(normalizedDescriptions);
 
       for (let i = 0; i < records.length; i++) {
         try {
           const embedding = embeddings[i];
+          const normalized = normalizedDescriptions[i] || descriptions[i];
           
-          // Update raw data with embedding
+          // Update raw data with embedding and normalized text
           await pool.query(
             `UPDATE retailer_data_raw 
-             SET description_embedding = $1, processing_status = 'processed', updated_at = NOW()
-             WHERE id = $2`,
-            [`[${embedding.join(',')}]`, records[i].id]
+             SET description_embedding = $1, 
+                 normalized_description = $2,
+                 processing_status = 'processed', 
+                 updated_at = NOW()
+             WHERE id = $3`,
+            [`[${embedding.join(',')}]`, normalized, records[i].id]
           );
 
           // Find and create matches
@@ -403,9 +422,15 @@ export class UploadService {
           );
 
           for (const match of matchesResult.rows) {
-            const status = match.final_confidence >= 0.95 
+            // Use dynamic thresholds: 90% for auto-confirm, 60% for review
+            const status = match.final_confidence >= 0.90 
               ? 'auto_confirmed' 
-              : 'pending';
+              : match.final_confidence >= 0.60
+                ? 'pending'
+                : 'low_confidence';
+
+            if (status === 'auto_confirmed') autoConfirmed++;
+            if (status === 'pending') pendingReview++;
 
             await pool.query(
               `INSERT INTO equivalence_map (
@@ -431,7 +456,7 @@ export class UploadService {
         }
       }
     } catch (err) {
-      console.error('Batch embedding generation failed:', err);
+      console.error('Batch processing failed:', err);
       failed = records.length;
     }
 
@@ -439,6 +464,8 @@ export class UploadService {
       batchSize,
       processed,
       failed,
+      autoConfirmed,
+      pendingReview,
       remaining: await this.getPendingCount()
     };
   }

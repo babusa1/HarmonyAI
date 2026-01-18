@@ -1,46 +1,45 @@
 gtin,canonical_name,brand,manufacturer,category,size_value,size_unit
-0012345678901,Crest 3D White Radiant Mint Toothpaste 4.1oz,Crest,Procter & Gamble,Oral Care,4.1,oz
-0012345678902,Crest 3D White Arctic Fresh Toothpaste 5.4oz,Crest,Procter & Gamble,Oral Care,5.4,oz
-0012345678903,Crest Pro-Health Clean Mint Toothpaste 4.6oz,Crest,Procter & Gamble,Oral Care,4.6,oz
-0012345678904,Colgate Total Whitening Toothpaste 4.8oz,Colgate,Colgate-Palmolive,Oral Care,4.8,oz
-0012345678905,Colgate Total Advanced Clean Toothpaste 6.0oz,Colgate,Colgate-Palmolive,Oral Care,6.0,oz
-0012345678906,Sensodyne Pronamel Gentle Whitening Toothpaste 4.0oz,Sensodyne,GSK,Oral Care,4.0,oz
-0012345678907,Listerine Total Care Fresh Mint Mouthwash 500ml,Listerine,Johnson & Johnson,Oral Care,500,ml
-0012345678908,Listerine Total Care Zero Alcohol Mouthwash 1000ml,Listerine,Johnson & Johnson,Oral Care,1000,ml
-0023456789001,Pepsi Original Cola 500ml,Pepsi,PepsiCo,Beverages,500,ml
-0023456789002,Pepsi Zero Sugar Cola 591ml,Pepsi,PepsiCo,Beverages,591,ml
-0023456789003,Mountain Dew Original 500ml,Mountain Dew,PepsiCo,Beverages,500,ml
-0023456789004,Mountain Dew Code Red 2L,Mountain Dew,PepsiCo,Beverages,2000,ml
-0023456789005,Gatorade Lemon Lime 591ml,Gatorade,PepsiCo,Beverages,591,ml
-0023456789006,Coca-Cola Original 500ml,Coca-Cola,The Coca-Cola Company,Beverages,500,ml
-0023456789007,Sprite Original 591ml,Sprite,The Coca-Cola Company,Beverages,591,ml
-0023456789008,Fanta Orange 500ml,Fanta,The Coca-Cola Company,Beverages,500,ml
-0023456789009,Aquafina Purified Water 1L,Aquafina,PepsiCo,Beverages,1000,ml
-0023456789010,Dasani Purified Water 591ml,Dasani,The Coca-Cola Company,Beverages,591,ml
-0034567890001,Head & Shoulders Classic Clean Original Shampoo 400ml,Head & Shoulders,Procter & Gamble,Personal Care,400,ml
-0034567890002,Head & Shoulders Classic Clean 2-in-1 Shampoo 700ml,Head & Shoulders,Procter & Gamble,Personal Care,700,ml
-0034567890003,Pantene Pro-V Daily Moisture Renewal Shampoo 400ml,Pantene,Procter & Gamble,Personal Care,400,ml
-0034567890004,Dove Daily Moisture Shampoo 355ml,Dove,Unilever,Personal Care,355,ml
-0034567890005,Old Spice Swagger Body Wash 532ml,Old Spice,Procter & Gamble,Personal Care,532,ml
-0034567890006,Old Spice Fiji Body Wash 650ml,Old Spice,Procter & Gamble,Personal Care,650,ml
-0034567890007,Axe Apollo Body Wash 473ml,Axe,Unilever,Personal Care,473,ml
-0034567890008,Secret Clinical Completely Clean Deodorant 2.6oz,Secret,Procter & Gamble,Personal Care,2.6,oz
-0034567890009,Degree Motion Sense Cool Rush Deodorant 2.7oz,Degree,Unilever,Personal Care,2.7,oz
-0045678901001,Tide Original Laundry Detergent 92oz,Tide,Procter & Gamble,Household,92,oz
-0045678901002,Tide Free & Gentle Laundry Detergent 92oz,Tide,Procter & Gamble,Household,92,oz
-0045678901003,Tide Ultra Oxi Liquid Laundry Detergent 92oz,Tide,Procter & Gamble,Household,92,oz
-0045678901004,Gain Original Laundry Detergent 92oz,Gain,Procter & Gamble,Household,92,oz
-0045678901005,Persil ProClean Original Laundry Detergent 100oz,Persil,Henkel,Household,100,oz
-0045678901006,Dawn Ultra Original Dish Soap 24oz,Dawn,Procter & Gamble,Household,24,oz
-0045678901007,Dawn Ultra Platinum Dish Soap 38oz,Dawn,Procter & Gamble,Household,38,oz
-0045678901008,Palmolive Ultra Original Dish Soap 32.5oz,Palmolive,Colgate-Palmolive,Household,32.5,oz
-0056789012001,Lay's Classic Potato Chips 7.75oz,Lay's,PepsiCo,Snacks,7.75,oz
-0056789012002,Lay's Sour Cream & Onion Chips 10oz,Lay's,PepsiCo,Snacks,10,oz
-0056789012003,Lay's BBQ Potato Chips 13oz,Lay's,PepsiCo,Snacks,13,oz
-0056789012004,Doritos Nacho Cheese Chips 9.25oz,Doritos,PepsiCo,Snacks,9.25,oz
-0056789012005,Doritos Cool Ranch Chips 11oz,Doritos,PepsiCo,Snacks,11,oz
-0056789012006,Tostitos Original Tortilla Chips 13oz,Tostitos,PepsiCo,Snacks,13,oz
-0056789012007,Pringles Original Crisps 5.2oz,Pringles,Kellogg's,Snacks,5.2,oz
-0056789012008,Oreo Original Cookies 10.1oz,Oreo,Mondelez,Snacks,10.1,oz
-0056789012009,Oreo Double Stuf Cookies 15.35oz,Oreo,Mondelez,Snacks,15.35,oz
-0056789012010,Chips Ahoy! Original Cookies 11.75oz,Chips Ahoy!,Mondelez,Snacks,11.75,oz
+012345678901,Crest 3D White Radiant Mint Toothpaste 4.8oz,Crest,Procter & Gamble,Oral Care,4.8,oz
+012345678902,Crest Pro-Health Advanced Whitening 5.1oz,Crest,Procter & Gamble,Oral Care,5.1,oz
+012345678903,Crest Complete Whitening + Scope 6.2oz,Crest,Procter & Gamble,Oral Care,6.2,oz
+012345678904,Colgate Total Whitening Toothpaste 4.8oz,Colgate,Colgate-Palmolive,Oral Care,4.8,oz
+012345678905,Colgate Total Clean Mint 5.1oz,Colgate,Colgate-Palmolive,Oral Care,5.1,oz
+012345678906,Sensodyne Pronamel Fresh Breath 4oz,Sensodyne,GSK,Oral Care,4,oz
+012345678907,Listerine Cool Mint Mouthwash 500ml,Listerine,Johnson & Johnson,Oral Care,500,ml
+012345678908,Listerine Total Care Fresh Mint 1L,Listerine,Johnson & Johnson,Oral Care,1000,ml
+012345678910,Pepsi Original Soda 2L,Pepsi,PepsiCo,Beverages,2000,ml
+012345678911,Pepsi Zero Sugar 12oz Can,Pepsi,PepsiCo,Beverages,355,ml
+012345678912,Mountain Dew Original 20oz,Mountain Dew,PepsiCo,Beverages,591,ml
+012345678913,Mountain Dew Code Red 2L,Mountain Dew,PepsiCo,Beverages,2000,ml
+012345678914,Gatorade Lemon-Lime 32oz,Gatorade,PepsiCo,Beverages,946,ml
+012345678915,Gatorade Fruit Punch 20oz,Gatorade,PepsiCo,Beverages,591,ml
+012345678916,Coca-Cola Classic 2L,Coca-Cola,The Coca-Cola Company,Beverages,2000,ml
+012345678917,Coca-Cola Zero Sugar 12oz,Coca-Cola,The Coca-Cola Company,Beverages,355,ml
+012345678918,Sprite Original 2L,Sprite,The Coca-Cola Company,Beverages,2000,ml
+012345678919,Fanta Orange 2L,Fanta,The Coca-Cola Company,Beverages,2000,ml
+012345678920,Head & Shoulders Classic Clean Shampoo 13.5oz,Head & Shoulders,Procter & Gamble,Personal Care,400,ml
+012345678921,Head & Shoulders 2-in-1 Complete Scalp Care 23.7oz,Head & Shoulders,Procter & Gamble,Personal Care,700,ml
+012345678922,Pantene Pro-V Daily Moisture Renewal 12.6oz,Pantene,Procter & Gamble,Personal Care,373,ml
+012345678923,Pantene Pro-V Volume Root Lifting 12oz,Pantene,Procter & Gamble,Personal Care,355,ml
+012345678924,Dove Deep Moisture Body Wash 22oz,Dove,Unilever,Personal Care,650,ml
+012345678925,Dove Gentle Clean Body Wash 16oz,Dove,Unilever,Personal Care,473,ml
+012345678926,Old Spice Swagger Body Wash 21oz,Old Spice,Procter & Gamble,Personal Care,621,ml
+012345678927,Old Spice Fiji Body Wash 21oz,Old Spice,Procter & Gamble,Personal Care,621,ml
+012345678928,Axe Apollo Body Spray 4oz,Axe,Unilever,Personal Care,113,g
+012345678929,Degree Men Arctic Edge Antiperspirant 2.7oz,Degree,Unilever,Personal Care,76,g
+012345678930,Secret Clinical Strength Invisible Solid 2.6oz,Secret,Procter & Gamble,Personal Care,73,g
+012345678931,Tide Original Liquid Laundry Detergent 46oz,Tide,Procter & Gamble,Household,1360,ml
+012345678932,Tide PODS Original 42ct,Tide,Procter & Gamble,Household,42,ct
+012345678933,Tide Plus Oxi 92oz,Tide,Procter & Gamble,Household,2720,ml
+012345678934,Gain Original Liquid 50oz,Gain,Procter & Gamble,Household,1478,ml
+012345678935,Gain Flings! Original 42ct,Gain,Procter & Gamble,Household,42,ct
+012345678936,Dawn Ultra Dishwashing Liquid Original 19.4oz,Dawn,Procter & Gamble,Household,574,ml
+012345678937,Dawn Platinum Power Wash Spray 16oz,Dawn,Procter & Gamble,Household,473,ml
+012345678938,Lay's Classic Potato Chips 10oz,Lay's,PepsiCo,Snacks,283,g
+012345678939,Lay's BBQ Potato Chips 7.75oz,Lay's,PepsiCo,Snacks,220,g
+012345678940,Lay's Sour Cream & Onion 7.75oz,Lay's,PepsiCo,Snacks,220,g
+012345678941,Doritos Nacho Cheese 9.25oz,Doritos,PepsiCo,Snacks,262,g
+012345678942,Doritos Cool Ranch 9.25oz,Doritos,PepsiCo,Snacks,262,g
+012345678943,Tostitos Scoops! 10oz,Tostitos,PepsiCo,Snacks,283,g
+012345678944,Pringles Original 5.5oz,Pringles,Kellogg's,Snacks,156,g
+012345678945,Oreo Original Cookies 14.3oz,Oreo,Mondelez,Snacks,405,g

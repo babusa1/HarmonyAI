@@ -30,7 +30,13 @@ export class AnalyticsService {
         SELECT 
           COUNT(*) as total,
           COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
-          COUNT(CASE WHEN status IN ('auto_confirmed', 'verified', 'manual') THEN 1 END) as confirmed
+          COUNT(CASE WHEN status = 'auto_confirmed' THEN 1 END) as auto_confirmed,
+          COUNT(CASE WHEN status = 'verified' THEN 1 END) as verified,
+          COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected,
+          COUNT(CASE WHEN status = 'manual' THEN 1 END) as manual,
+          COUNT(CASE WHEN status IN ('auto_confirmed', 'verified', 'manual') THEN 1 END) as confirmed,
+          AVG(final_confidence) as avg_confidence,
+          AVG(CASE WHEN status IN ('auto_confirmed', 'verified', 'manual') THEN final_confidence END) as avg_confirmed_confidence
         FROM equivalence_map
       `,
       salesSummary: `
@@ -42,10 +48,39 @@ export class AnalyticsService {
         WHERE transaction_date >= NOW() - INTERVAL '30 days'
       `,
       sourceCount: `SELECT COUNT(*) as count FROM source_systems WHERE is_active = true`,
+      sourceBreakdown: `
+        SELECT 
+          ss.code,
+          ss.name,
+          COUNT(rdr.id) as sku_count,
+          COUNT(em.id) as mapping_count,
+          COUNT(CASE WHEN em.status IN ('auto_confirmed', 'verified', 'manual') THEN 1 END) as confirmed_count
+        FROM source_systems ss
+        LEFT JOIN retailer_data_raw rdr ON ss.id = rdr.source_system_id
+        LEFT JOIN equivalence_map em ON rdr.id = em.raw_id
+        WHERE ss.is_active = true
+        GROUP BY ss.code, ss.name
+        ORDER BY sku_count DESC
+      `,
       recentActivity: `
         SELECT 
           COUNT(CASE WHEN created_at >= NOW() - INTERVAL '24 hours' THEN 1 END) as last_24h,
           COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as last_7d
+        FROM equivalence_map
+      `,
+      processingStats: `
+        SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN processing_status = 'pending' THEN 1 END) as pending,
+          COUNT(CASE WHEN processing_status = 'processed' THEN 1 END) as processed,
+          COUNT(CASE WHEN processing_status = 'failed' THEN 1 END) as failed
+        FROM retailer_data_raw
+      `,
+      confidenceDistribution: `
+        SELECT 
+          COUNT(CASE WHEN final_confidence >= 0.90 THEN 1 END) as high_confidence,
+          COUNT(CASE WHEN final_confidence >= 0.60 AND final_confidence < 0.90 THEN 1 END) as medium_confidence,
+          COUNT(CASE WHEN final_confidence < 0.60 THEN 1 END) as low_confidence
         FROM equivalence_map
       `
     };
@@ -56,9 +91,31 @@ export class AnalyticsService {
       pool.query(queries.mappingStats),
       pool.query(queries.salesSummary),
       pool.query(queries.sourceCount),
-      pool.query(queries.recentActivity)
+      pool.query(queries.sourceBreakdown),
+      pool.query(queries.recentActivity),
+      pool.query(queries.processingStats),
+      pool.query(queries.confidenceDistribution)
     ]);
 
+    const mappingData = results[2].rows[0];
+    const total = parseInt(mappingData.total);
+    const confirmed = parseInt(mappingData.confirmed);
+    const autoConfirmed = parseInt(mappingData.auto_confirmed);
+    const pending = parseInt(mappingData.pending);
+    
+    // Calculate auto-match rate (% of processed that were auto-confirmed)
+    const autoMatchRate = total > 0 ? ((autoConfirmed / total) * 100).toFixed(1) : '0';
+    
+    // Calculate approval rate (% of manual reviews that were approved vs rejected)
+    const verified = parseInt(mappingData.verified);
+    const rejected = parseInt(mappingData.rejected);
+    const manualReviews = verified + rejected;
+    const approvalRate = manualReviews > 0 ? ((verified / manualReviews) * 100).toFixed(1) : '100';
+
+    const procStats = results[7].rows[0];
+    const procTotal = parseInt(procStats.total);
+    const procProcessed = parseInt(procStats.processed);
+    
     return {
       catalog: {
         totalProducts: parseInt(results[0].rows[0].count)
@@ -67,12 +124,18 @@ export class AnalyticsService {
         totalRecords: parseInt(results[1].rows[0].count)
       },
       mappings: {
-        total: parseInt(results[2].rows[0].total),
-        pending: parseInt(results[2].rows[0].pending),
-        confirmed: parseInt(results[2].rows[0].confirmed),
-        matchRate: results[2].rows[0].total > 0 
-          ? ((results[2].rows[0].confirmed / results[2].rows[0].total) * 100).toFixed(1)
-          : 0
+        total,
+        pending,
+        autoConfirmed,
+        verified,
+        rejected,
+        manual: parseInt(mappingData.manual),
+        confirmed,
+        avgConfidence: parseFloat(mappingData.avg_confidence) || 0,
+        avgConfirmedConfidence: parseFloat(mappingData.avg_confirmed_confidence) || 0,
+        matchRate: total > 0 ? ((confirmed / total) * 100).toFixed(1) : '0',
+        autoMatchRate,
+        approvalRate
       },
       sales: {
         last30Days: {
@@ -82,11 +145,33 @@ export class AnalyticsService {
         }
       },
       sources: {
-        total: parseInt(results[4].rows[0].count)
+        total: parseInt(results[4].rows[0].count),
+        breakdown: results[5].rows.map(r => ({
+          code: r.code,
+          name: r.name,
+          skuCount: parseInt(r.sku_count),
+          mappingCount: parseInt(r.mapping_count),
+          confirmedCount: parseInt(r.confirmed_count),
+          matchRate: r.sku_count > 0 
+            ? ((parseInt(r.confirmed_count) / parseInt(r.sku_count)) * 100).toFixed(1)
+            : '0'
+        }))
       },
       activity: {
-        last24h: parseInt(results[5].rows[0].last_24h),
-        last7d: parseInt(results[5].rows[0].last_7d)
+        last24h: parseInt(results[6].rows[0].last_24h),
+        last7d: parseInt(results[6].rows[0].last_7d)
+      },
+      processing: {
+        total: procTotal,
+        pending: parseInt(procStats.pending),
+        processed: procProcessed,
+        failed: parseInt(procStats.failed),
+        progress: procTotal > 0 ? ((procProcessed / procTotal) * 100).toFixed(1) : '0'
+      },
+      confidence: {
+        high: parseInt(results[8].rows[0].high_confidence),
+        medium: parseInt(results[8].rows[0].medium_confidence),
+        low: parseInt(results[8].rows[0].low_confidence)
       }
     };
   }
