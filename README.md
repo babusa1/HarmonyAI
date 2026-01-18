@@ -64,12 +64,12 @@ docker-compose up -d
 
 ### Port Configuration
 
-| Service | URL |
-|---------|-----|
-| 🌐 **Frontend** | http://localhost:9000 |
-| 🔌 **Backend API** | http://localhost:9001 |
-| 🧠 **NLP Service** | http://localhost:9002 |
-| 🐘 **PostgreSQL** | localhost:9432 |
+| Service | URL | Docs |
+|---------|-----|------|
+| 🌐 **Frontend** | http://localhost:9000 | - |
+| 🔌 **Backend API** | http://localhost:9001 | [Swagger](http://localhost:9001/docs) |
+| 🧠 **NLP Service** | http://localhost:9002 | [Swagger](http://localhost:9002/docs) |
+| 🐘 **PostgreSQL** | localhost:9432 | - |
 
 ---
 
@@ -170,6 +170,8 @@ harmonizeiq/
 | [AWS Deployment](docs/AWS_DEPLOYMENT.md) | Production deployment guide |
 | [Developer Guide](docs/DEVELOPER_GUIDE.md) | Setup & contribution guide |
 | [PRD](docs/PRD.md) | Product Requirements Document |
+| [Testing Documentation](docs/TESTING_DOCUMENTATION.md) | API tests & verification |
+| [Demo Guide](demo-data/DEMO_GUIDE.md) | Step-by-step demo walkthrough |
 
 ---
 
@@ -187,7 +189,15 @@ harmonizeiq/
 
 ## 🛣️ Roadmap
 
-- [x] **MVP** - Core matching engine + HITL dashboard
+### Completed ✅
+- [x] **Phase 1** - Core matching engine + HITL dashboard
+- [x] **Phase 2** - Brand dictionary + Abbreviation expansion
+- [x] **Phase 3** - Learning loop + HITL decision storage
+- [x] **Phase 4** - Export APIs (CSV/JSON) + Multi-retailer support
+- [x] **Phase 5** - Analytics (Cross-retailer, Price comparison)
+- [x] **API Docs** - Swagger documentation for all endpoints
+
+### Upcoming
 - [ ] **v1.1** - Real-time API integration
 - [ ] **v1.2** - Multi-tenant support
 - [ ] **v2.0** - ML model retraining from feedback
