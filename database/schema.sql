@@ -25,7 +25,7 @@ CREATE TABLE source_systems (
 -- Categories (Product Hierarchy)
 CREATE TABLE categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL UNIQUE,
     parent_id UUID REFERENCES categories(id),
     level INTEGER NOT NULL DEFAULT 1,
     path VARCHAR(500), -- Materialized path for efficient queries
@@ -35,7 +35,7 @@ CREATE TABLE categories (
 -- Brands Dictionary
 CREATE TABLE brands (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL UNIQUE,
     manufacturer VARCHAR(255),
     aliases JSONB DEFAULT '[]', -- ["P&G", "Procter Gamble", "Procter & Gamble"]
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
