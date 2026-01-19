@@ -1,4 +1,4 @@
-﻿/**
+/**
  * API Routes
  * @swagger
  * tags:
