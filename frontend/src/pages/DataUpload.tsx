@@ -18,12 +18,13 @@ import { uploadFile, triggerProcessing as triggerProcessingAPI, fetchProcessingS
 
 interface UploadState {
   file: File | null;
-  status: 'idle' | 'uploading' | 'success' | 'error';
+  status: 'idle' | 'uploading' | 'success' | 'error' | 'partial';
   message: string;
   result?: {
     recordsProcessed: number;
     recordsCreated: number;
     recordsUpdated: number;
+    errors?: string[];
   };
 }
 
@@ -63,6 +64,8 @@ export default function DataUpload() {
     processed: 0,
     remaining: 0,
     progress: 0,
+    lastResult: null as { processed: number; autoConfirmed: number; pendingReview: number; failed: number } | null,
+    message: '',
   });
 
   // Fetch initial processing status on mount
@@ -70,12 +73,13 @@ export default function DataUpload() {
     const loadStatus = async () => {
       try {
         const status = await fetchProcessingStatus();
-        setProcessingStatus({
+        setProcessingStatus(prev => ({
+          ...prev,
           isProcessing: false,
           processed: Number(status.processed) || 0,
           remaining: Number(status.pending) || 0,
           progress: Number(status.progress) || 0,
-        });
+        }));
       } catch (error) {
         console.log('Could not fetch processing status');
       }
@@ -122,16 +126,24 @@ export default function DataUpload() {
         needsSourceSystem ? selectedSource : undefined
       );
 
+      // Check if there were partial errors
+      const hasErrors = result.errors && result.errors.length > 0;
+      const status = hasErrors ? 'partial' : 'success';
+      const message = hasErrors 
+        ? `Completed with ${result.errors.length} errors` 
+        : 'Upload successful!';
+
       setUploadStates(prev => ({
         ...prev,
         [uploadId]: {
           ...prev[uploadId],
-          status: 'success',
-          message: 'Upload successful!',
+          status,
+          message,
           result: {
             recordsProcessed: result.recordsProcessed || result.count || 0,
             recordsCreated: result.recordsCreated || result.count || 0,
             recordsUpdated: result.recordsUpdated || 0,
+            errors: result.errors || [],
           }
         }
       }));
@@ -149,39 +161,42 @@ export default function DataUpload() {
   };
 
   const handleTriggerProcessing = async () => {
-    setProcessingStatus(prev => ({ ...prev, isProcessing: true }));
+    setProcessingStatus(prev => ({ ...prev, isProcessing: true, message: 'Starting AI processing...' }));
     
     try {
       // Call actual processing API
-      await triggerProcessingAPI(50);
+      setProcessingStatus(prev => ({ ...prev, message: 'Generating embeddings and finding matches...' }));
+      const result = await triggerProcessingAPI(50);
       
-      // Poll for status updates
-      for (let i = 0; i < 20; i++) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        try {
-          const status = await fetchProcessingStatus();
-          setProcessingStatus({
-            isProcessing: status.isProcessing || false,
-            processed: Number(status.processed) || 0,
-            remaining: Number(status.pending) || 0,
-            progress: Number(status.progress) || 0,
-          });
-          if (!status.isProcessing) break;
-        } catch {
-          // Fallback: simulate progress
-          setProcessingStatus(prev => ({
-            ...prev,
-            processed: Number(prev.processed) + Math.floor(Math.random() * 30),
-            remaining: Math.max(0, Number(prev.remaining) - Math.floor(Math.random() * 30)),
-            progress: Math.min(100, Number(prev.progress) + Math.random() * 5),
-          }));
-        }
-      }
-    } catch (error) {
-      console.error('Processing error:', error);
-    }
+      // Store the result
+      const lastResult = {
+        processed: result.processed || 0,
+        autoConfirmed: result.autoConfirmed || 0,
+        pendingReview: result.pendingReview || 0,
+        failed: result.failed || 0,
+      };
 
-    setProcessingStatus(prev => ({ ...prev, isProcessing: false }));
+      // Fetch updated status
+      const status = await fetchProcessingStatus();
+      setProcessingStatus({
+        isProcessing: false,
+        processed: Number(status.processed) || 0,
+        remaining: Number(status.pending) || 0,
+        progress: Number(status.progress) || 0,
+        lastResult,
+        message: lastResult.processed > 0 
+          ? `✓ Processed ${lastResult.processed} records: ${lastResult.autoConfirmed} auto-confirmed, ${lastResult.pendingReview} pending review`
+          : 'No pending records to process',
+      });
+    } catch (error: any) {
+      console.error('Processing error:', error);
+      setProcessingStatus(prev => ({ 
+        ...prev, 
+        isProcessing: false, 
+        message: `Error: ${error.response?.data?.error || error.message || 'Processing failed'}`,
+        lastResult: null,
+      }));
+    }
   };
 
   return (
@@ -198,10 +213,31 @@ export default function DataUpload() {
         </div>
       </div>
 
+      {/* Upload Order Info */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-4 rounded-xl bg-brand-500/10 border border-brand-500/30"
+      >
+        <div className="flex items-start gap-3">
+          <RefreshCw className="w-5 h-5 text-brand-400 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-brand-400">Recommended Upload Order:</p>
+            <p className="text-xs text-surface-400 mt-1">
+              <span className="text-brand-400">1.</span> Upload <strong>Manufacturer Catalog</strong> (your master products) → 
+              <span className="text-brand-400"> 2.</span> Upload <strong>Retailer Data</strong> (SKU descriptions) → 
+              <span className="text-brand-400"> 3.</span> Click <strong>Start Processing</strong> (generates AI matches) → 
+              <span className="text-brand-400"> 4.</span> Upload <strong>Sales Transactions</strong> (links to existing SKUs)
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Processing Status Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
         className="card p-6"
       >
         <div className="flex items-center justify-between mb-4">
@@ -248,6 +284,53 @@ export default function DataUpload() {
             transition={{ duration: 0.5 }}
           />
         </div>
+
+        {/* Processing Status Message */}
+        {processingStatus.message && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={cn(
+              "mt-4 p-3 rounded-lg text-sm",
+              processingStatus.message.startsWith('✓') 
+                ? "bg-accent-mint/10 border border-accent-mint/30 text-accent-mint"
+                : processingStatus.message.startsWith('Error')
+                  ? "bg-accent-coral/10 border border-accent-coral/30 text-accent-coral"
+                  : "bg-brand-500/10 border border-brand-500/30 text-brand-400"
+            )}
+          >
+            {processingStatus.isProcessing && (
+              <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+            )}
+            {processingStatus.message}
+          </motion.div>
+        )}
+
+        {/* Processing Result Summary */}
+        {processingStatus.lastResult && !processingStatus.isProcessing && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 grid grid-cols-4 gap-2"
+          >
+            <div className="p-3 rounded-lg bg-surface-800/50 border border-surface-700/50 text-center">
+              <p className="text-xs text-surface-400">Processed</p>
+              <p className="text-lg font-bold text-surface-100">{processingStatus.lastResult.processed}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-accent-mint/10 border border-accent-mint/30 text-center">
+              <p className="text-xs text-surface-400">Auto-Confirmed</p>
+              <p className="text-lg font-bold text-accent-mint">{processingStatus.lastResult.autoConfirmed}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-accent-gold/10 border border-accent-gold/30 text-center">
+              <p className="text-xs text-surface-400">Pending Review</p>
+              <p className="text-lg font-bold text-accent-gold">{processingStatus.lastResult.pendingReview}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-accent-coral/10 border border-accent-coral/30 text-center">
+              <p className="text-xs text-surface-400">Failed</p>
+              <p className="text-lg font-bold text-accent-coral">{processingStatus.lastResult.failed}</p>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Upload Cards */}
@@ -351,15 +434,27 @@ export default function DataUpload() {
                 </div>
 
                 {/* Status */}
-                {state?.status === 'success' && state.result && (
+                {(state?.status === 'success' || state?.status === 'partial') && state.result && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 p-3 rounded-lg bg-accent-mint/10 border border-accent-mint/30"
+                    className={cn(
+                      "mt-4 p-3 rounded-lg",
+                      state.status === 'success' 
+                        ? "bg-accent-mint/10 border border-accent-mint/30"
+                        : "bg-accent-gold/10 border border-accent-gold/30"
+                    )}
                   >
-                    <div className="flex items-center gap-2 text-accent-mint mb-2">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span className="text-sm font-medium">Upload Successful!</span>
+                    <div className={cn(
+                      "flex items-center gap-2 mb-2",
+                      state.status === 'success' ? "text-accent-mint" : "text-accent-gold"
+                    )}>
+                      {state.status === 'success' ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4" />
+                      )}
+                      <span className="text-sm font-medium">{state.message}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-xs">
                       <div>
@@ -375,6 +470,20 @@ export default function DataUpload() {
                         <p className="text-surface-200 font-medium">{state.result.recordsUpdated}</p>
                       </div>
                     </div>
+                    {/* Show errors if partial */}
+                    {state.result.errors && state.result.errors.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-surface-700/50">
+                        <p className="text-xs text-accent-coral mb-1">Errors ({state.result.errors.length}):</p>
+                        <div className="max-h-24 overflow-y-auto">
+                          {state.result.errors.slice(0, 5).map((err, i) => (
+                            <p key={i} className="text-xs text-surface-400 truncate">{err}</p>
+                          ))}
+                          {state.result.errors.length > 5 && (
+                            <p className="text-xs text-surface-500">...and {state.result.errors.length - 5} more</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                 )}
 
